@@ -36,9 +36,9 @@ src/agentbridge/
 ├── clock.py          reloj UTC inyectable (pruebas de expiración sin dormir)
 ├── errors.py         errores de dominio con código estable
 ├── storage/          conexión, migraciones, transacciones
-├── domain/           modelos Pydantic y validación de rutas      (etapa 3)
-├── services/         tareas, mensajería, reservas, decisiones,  (etapas 3-4)
-│                     auditoría — toda la lógica de negocio
+├── domain/           modelos Pydantic, ids y validación de rutas
+├── services/         proyectos/agentes y auditoría; tareas,     (etapa 4)
+│                     mensajería, reservas y decisiones
 └── server.py         adaptador MCP delgado sobre los servicios   (etapa 5)
 ```
 
