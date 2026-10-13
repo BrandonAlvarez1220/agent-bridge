@@ -37,8 +37,8 @@ src/agentbridge/
 ├── errors.py         errores de dominio con código estable
 ├── storage/          conexión, migraciones, transacciones
 ├── domain/           modelos Pydantic, ids y validación de rutas
-├── services/         proyectos/agentes y auditoría; tareas,     (etapa 4)
-│                     mensajería, reservas y decisiones
+├── services/         proyectos/agentes, tareas, mensajería,
+│                     reservas, decisiones, contexto y auditoría
 └── server.py         adaptador MCP delgado sobre los servicios   (etapa 5)
 ```
 

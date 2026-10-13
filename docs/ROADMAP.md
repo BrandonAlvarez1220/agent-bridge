@@ -5,7 +5,7 @@
 | 1 | Inspección del entorno, arquitectura, ADRs | ✅ |
 | 2 | Estructura, esquema, migraciones, transacciones | ✅ |
 | 3 | Dominio: validación de rutas e ids, modelos, auditoría, registro de proyectos y agentes | ✅ |
-| 4 | Servicios de tareas (claim, lease, dependencias), mensajería y reservas | ⏳ |
+| 4 | Servicios de tareas (claim, lease, dependencias), mensajería, reservas, decisiones y contexto | ✅ |
 | 5 | Servidor MCP (`mcp` 2.x, `MCPServer`) y pruebas con cliente en memoria | ⏳ |
 | 6 | Configuración verificada de Claude Code (`.mcp.json`) y OpenCode (`opencode.json`), hooks | ⏳ |
 | 7 | Comandos de worktrees e integración controlada | ⏳ |
@@ -34,12 +34,12 @@ Las configuraciones se **probarán con los clientes reales en la etapa 6**. Hast
 ## Pruebas de aceptación (de la especificación)
 
 1. Ambos clientes se conectan al mismo estado → etapa 6/8.
-2. Mensaje persiste entre reinicios → etapa 4.
-3. `claim_task` concurrente → un ganador. Patrón ya probado con 8 procesos (`tests/concurrency`); falta el servicio.
-4. Reservas incompatibles rechazadas salvo excepción auditada → etapa 4.
-5. Reserva expirada reutilizable y auditada → etapa 4.
-6. No liberar reservas ajenas → etapa 4.
-7. Dependencias bloquean → etapa 4.
+2. Mensaje persiste entre reinicios → ✅ (`test_message_survives_recipient_restart`).
+3. `claim_task` concurrente → un ganador → ✅ (8 procesos, `tests/concurrency/test_service_races.py`).
+4. Reservas incompatibles rechazadas salvo excepción auditada → ✅ (unitarias y 8 procesos en carrera).
+5. Reserva expirada reutilizable y auditada → ✅
+6. No liberar reservas ajenas → ✅
+7. Dependencias bloquean (y no se permiten ciclos) → ✅
 8. Rutas fuera del repo rechazadas → ✅ (`tests/unit/test_paths.py`, incluye escape por enlace simbólico).
 9. Worktrees separan cambios → etapa 7.
 10. Conflictos Git detectados al integrar → etapa 7.

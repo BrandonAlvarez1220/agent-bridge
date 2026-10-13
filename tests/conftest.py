@@ -34,3 +34,21 @@ def project(db: sqlite3.Connection, clock: FakeClock) -> str:
             ("demo", agent, agent, now, now),
         )
     return "demo"
+
+
+@pytest.fixture
+def repo(tmp_path):
+    root = tmp_path / "repo"
+    (root / ".git").mkdir(parents=True)
+    return root
+
+
+@pytest.fixture
+def bridge(db: sqlite3.Connection, clock: FakeClock, repo) -> str:
+    """Proyecto registrado con los servicios reales y dos agentes: 'claude' y 'opencode'."""
+    from agentbridge.services import projects
+
+    projects.register_project(db, clock, project_id="demo", name="Demo", repository_root=repo)
+    projects.register_agent(db, clock, project_id="demo", agent_id="claude", agent_type="claude-code")
+    projects.register_agent(db, clock, project_id="demo", agent_id="opencode", agent_type="opencode")
+    return "demo"

@@ -6,13 +6,6 @@ from agentbridge.errors import ConflictError, InvalidInputError, NotFoundError
 from agentbridge.services import audit, projects
 
 
-@pytest.fixture
-def repo(tmp_path):
-    root = tmp_path / "repo"
-    (root / ".git").mkdir(parents=True)
-    return root
-
-
 def _register(db, clock, repo, **kwargs):
     params = {"project_id": "demo", "name": "Demo", "repository_root": repo} | kwargs
     return projects.register_project(db, clock, **params)
