@@ -94,7 +94,11 @@ def register_agent(
     workspace: str | Path | None = None,
     branch: str | None = None,
 ) -> Agent:
-    """Registra o actualiza un agente. Idempotente; solo audita altas y cambios reales."""
+    """Registra o actualiza un agente. Idempotente; solo audita altas y cambios reales.
+
+    ``workspace`` o ``branch`` en ``None`` significan "sin cambios", no "borrar".
+    Así el servidor, al arrancar, no pisa la rama que registró ``worktree create``.
+    """
     validate_id(agent_id, kind="agent_id")
     if not agent_type.strip() or len(agent_type) > 64:
         raise InvalidInputError("agent_type debe tener entre 1 y 64 caracteres")
@@ -119,6 +123,8 @@ def register_agent(
             )
             event = "agent.registered"
         else:
+            workspace_str = workspace_str if workspace_str is not None else existing["workspace"]
+            branch = branch if branch is not None else existing["branch"]
             changed = (existing["agent_type"], existing["workspace"], existing["branch"], existing["status"]) != (
                 agent_type,
                 workspace_str,

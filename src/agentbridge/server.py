@@ -18,6 +18,7 @@ import sqlite3
 import sys
 import threading
 from collections.abc import Callable
+from pathlib import Path
 from typing import Annotated, Any, Literal, TypeVar
 
 from mcp.server.mcpserver import MCPServer
@@ -25,7 +26,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 from pydantic import BaseModel, ConfigDict, Field
 
-from agentbridge import __version__
+from agentbridge import __version__, gitutil
 from agentbridge.clock import Clock, system_clock
 from agentbridge.config import Settings
 from agentbridge.domain.models import (
@@ -444,8 +445,19 @@ def bootstrap(settings: Settings, clock: Clock = system_clock) -> sqlite3.Connec
         agent_id=settings.agent_id,
         agent_type=settings.agent_type,
         workspace=settings.workspace,
+        branch=_detect_branch(settings.workspace),
     )
     return conn
+
+
+def _detect_branch(workspace: Path | None) -> str | None:
+    """Rama actual del worktree del agente; ``None`` si no se puede saber (no es fatal)."""
+    if workspace is None:
+        return None
+    try:
+        return gitutil.current_branch(workspace)
+    except AgentBridgeError:
+        return None
 
 
 def main() -> None:

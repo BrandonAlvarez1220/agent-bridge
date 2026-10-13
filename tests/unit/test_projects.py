@@ -94,3 +94,13 @@ def test_list_agents(db, clock, repo):
     for agent in ("opencode", "claude"):
         projects.register_agent(db, clock, project_id="demo", agent_id=agent, agent_type=agent)
     assert [a.id for a in projects.list_agents(db, "demo")] == ["claude", "opencode"]
+
+
+def test_reregistering_with_none_keeps_workspace_and_branch(db, clock, repo, tmp_path):
+    """Regresión: al arrancar, el servidor re-registra al agente y no debe borrar su rama."""
+    _register(db, clock, repo)
+    projects.register_agent(
+        db, clock, project_id="demo", agent_id="claude", agent_type="x", workspace=tmp_path, branch="claude/work"
+    )
+    again = projects.register_agent(db, clock, project_id="demo", agent_id="claude", agent_type="x")
+    assert (again.workspace, again.branch) == (str(tmp_path.resolve()), "claude/work")

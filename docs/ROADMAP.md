@@ -9,7 +9,7 @@
 | 5 | Servidor MCP (`mcp` 2.x, `MCPServer`), pruebas con cliente en memoria y con procesos stdio reales | ✅ |
 | 6 | CLI, `setup` para Claude Code y OpenCode, hooks y plugin que bloquean ediciones sobre rutas reservadas | ✅ (falta la verificación manual con los clientes, ver CLIENT_SETUP.md) |
 | 7 | Worktrees por agente/tarea e integración controlada (`merge-tree`, pruebas sobre el resultado fusionado) | ✅ |
-| 8 | End-to-end con dos procesos stdio, README completo, solución de problemas | ⏳ |
+| 8 | End-to-end con dos procesos stdio lanzados desde la configuración generada, README completo, SECURITY, CI | ✅ |
 
 ## Entorno verificado (2026-10-13)
 
@@ -33,7 +33,7 @@ Los formatos de configuración siguen la documentación oficial. La lógica de h
 
 ## Pruebas de aceptación (de la especificación)
 
-1. Ambos clientes se conectan al mismo estado → parcial: dos procesos stdio comparten estado con el cliente MCP oficial (`tests/integration/test_stdio_process.py`); falta verificar con Claude Code y OpenCode reales (etapa 6).
+1. Ambos clientes se conectan al mismo estado → parcial: dos procesos stdio lanzados con la configuración exacta de `.mcp.json` y `opencode.json` comparten estado (`tests/e2e`). Falta abrir Claude Code y OpenCode reales ([verificación manual](CLIENT_SETUP.md#4-verificación-manual-hazla-una-vez-en-tu-máquina)).
 2. Mensaje persiste entre reinicios → ✅ (`test_message_survives_recipient_restart`).
 3. `claim_task` concurrente → un ganador → ✅ (8 procesos, `tests/concurrency/test_service_races.py`).
 4. Reservas incompatibles rechazadas salvo excepción auditada → ✅ (unitarias y 8 procesos en carrera).
@@ -44,4 +44,16 @@ Los formatos de configuración siguen la documentación oficial. La lógica de h
 9. Worktrees separan cambios → ✅ (`tests/integration/test_worktrees_and_integration.py`).
 10. Conflictos Git detectados al integrar → ✅ (`integrate check` sin modificar ramas; nunca se afirma que el MCP los evite).
 11. Pruebas con un comando (`uv run pytest`) → ✅
-12. README completo → etapa 8.
+12. README completo (instalación, configuración, uso, limitaciones y solución de problemas) → ✅
+
+## Hallazgos de la prueba end-to-end
+
+La prueba `tests/e2e` encontró un error que las pruebas por componente no veían: al arrancar, el servidor volvía a registrar al agente con `branch = None` y borraba la rama que había guardado `worktree create`. Después, la integración no podía asociar la rama con sus tareas. Ahora `None` significa "sin cambios" y el servidor detecta la rama con Git (`test_reregistering_with_none_keeps_workspace_and_branch`).
+
+## Posibles siguientes pasos
+
+- Verificación manual con los clientes y, si OpenCode publica un hook de inicio de sesión, inyectar la bandeja también ahí.
+- Notificaciones activas (p. ej. `notifications/resources/updated`) para no depender de la siguiente consulta.
+- Panel web de solo lectura sobre la auditoría.
+- Transporte HTTP con autenticación para equipos o agentes remotos.
+- Búsqueda semántica de decisiones (embeddings) cuando el volumen lo justifique.
