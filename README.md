@@ -4,15 +4,16 @@ Infraestructura local para que varios agentes de programación —inicialmente *
 
 AgentBridge no une los modelos ni comparte sus conversaciones. Les da un **estado compartido y verificable**: tareas, mensajes, decisiones, dependencias, reservas temporales de rutas y una bitácora de auditoría. Todo vive en una base SQLite y se expone mediante un servidor MCP.
 
-> **Estado:** en desarrollo (etapa 5 de 8). El servidor MCP funciona y está probado con el cliente MCP oficial, tanto en memoria como con procesos stdio reales. Falta verificar la configuración con Claude Code y OpenCode reales (etapa 6). Ver [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Estado:** en desarrollo (etapa 6 de 8). Hay servidor MCP, CLI y configuración automática para Claude Code y OpenCode, con hooks que bloquean ediciones sobre rutas reservadas por otro agente. Falta la verificación manual con ambos clientes abiertos ([`docs/CLIENT_SETUP.md`](docs/CLIENT_SETUP.md)). Ver [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Qué garantiza y qué no
 
 | Garantiza (con pruebas) | No garantiza |
 | --- | --- |
 | Una tarea reclamada tiene un solo dueño, aunque dos agentes compitan por ella | Que un agente consulte su bandeja si nadie se lo pide (ver ADR-0009) |
-| Los mensajes persisten aunque el destinatario esté apagado | Que un archivo reservado no se edite por fuera del protocolo |
+| Los mensajes persisten aunque el destinatario esté apagado | Que un archivo reservado no se edite desde fuera de Claude Code u OpenCode (editor, terminal) |
 | No se crean reservas solapadas sin una excepción auditada | Que no haya conflictos de Git o semánticos al integrar |
+| Claude Code y OpenCode no editan rutas reservadas por otro agente (hooks/plugin) | Que OpenCode lea su bandeja sin que se lo pidan |
 
 ## Desarrollo
 
@@ -38,12 +39,15 @@ Cada agente lanza su propio proceso. La identidad se pasa por variables de entor
 | `AGENTBRIDGE_WORKSPACE` | no | Worktree del agente. Por defecto, el directorio actual |
 | `AGENTBRIDGE_LOG_LEVEL` | no | `INFO` por defecto. Los logs van a stderr |
 
-```bash
-AGENTBRIDGE_PROJECT_ID=demo AGENTBRIDGE_AGENT_ID=claude \
-AGENTBRIDGE_REPO_ROOT=/ruta/al/repo uv run agentbridge-mcp
-```
+Lo normal es no lanzarlo a mano: `agentbridge setup claude|opencode` genera la configuración de cada cliente. La guía completa está en [`docs/CLIENT_SETUP.md`](docs/CLIENT_SETUP.md).
 
-La configuración concreta para Claude Code y OpenCode llega en la etapa 6.
+```bash
+uv tool install .
+agentbridge init  --project-id demo --repo /ruta/al/repo
+agentbridge setup claude   --worktree ../demo-claude   --project-id demo --agent-id claude
+agentbridge setup opencode --worktree ../demo-opencode --project-id demo --agent-id opencode
+agentbridge status --project-id demo
+```
 
 ### Herramientas
 
@@ -62,4 +66,5 @@ Son 18, igual que en la especificación, pero no las mismas. Se quitaron `regist
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): componentes, flujo y diagrama.
 - [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md): tablas, estados e invariantes.
 - [`docs/decisions/`](docs/decisions/): decisiones de arquitectura (ADR) y el *por qué* de cada una.
+- [`docs/CLIENT_SETUP.md`](docs/CLIENT_SETUP.md): instalación, configuración de clientes y verificación manual.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md): etapas, riesgos y pruebas de aceptación.

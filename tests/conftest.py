@@ -52,3 +52,32 @@ def bridge(db: sqlite3.Connection, clock: FakeClock, repo) -> str:
     projects.register_agent(db, clock, project_id="demo", agent_id="claude", agent_type="claude-code")
     projects.register_agent(db, clock, project_id="demo", agent_id="opencode", agent_type="opencode")
     return "demo"
+
+
+def _git(cwd, *args):
+    import subprocess
+
+    subprocess.run(
+        ["git", "-c", "user.name=Test", "-c", "user.email=test@example.com", "-C", str(cwd), *args],
+        check=True,
+        capture_output=True,
+    )
+
+
+@pytest.fixture
+def git_project(tmp_path):
+    """Repo real con un commit y dos worktrees: uno por agente."""
+    main = tmp_path / "main"
+    main.mkdir()
+    _git(main, "init", "-q", "-b", "main")
+    (main / "src" / "auth").mkdir(parents=True)
+    (main / "src" / "auth" / "login.py").write_text("x = 1\n")
+    (main / "README.md").write_text("demo\n")
+    _git(main, "add", ".")
+    _git(main, "commit", "-q", "-m", "inicio")
+    worktrees = {}
+    for agent in ("claude", "opencode"):
+        path = tmp_path / f"wt-{agent}"
+        _git(main, "worktree", "add", "-q", "-b", f"{agent}/work", str(path))
+        worktrees[agent] = path.resolve()
+    return main.resolve(), worktrees

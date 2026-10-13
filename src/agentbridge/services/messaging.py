@@ -208,3 +208,19 @@ def get_message_status(conn: sqlite3.Connection, *, project_id: str, message_id:
         (message_id,),
     ).fetchall()
     return [Receipt(**dict(r)) for r in rows]
+
+
+def peek_unacknowledged(conn: sqlite3.Connection, *, project_id: str, agent_id: str, limit: int = 10) -> list[Message]:
+    """Vista previa de solo lectura para hooks: no crea recibos ni marca entregas.
+
+    Un aviso del hook no cuenta como entrega: el agente debe llamar a
+    ``read_inbox`` para recibir el mensaje completo y luego confirmarlo.
+    """
+    if not 1 <= limit <= MAX_INBOX_LIMIT:
+        raise InvalidInputError(f"limit debe estar entre 1 y {MAX_INBOX_LIMIT}")
+    rows = conn.execute(
+        "SELECT m.* FROM messages m LEFT JOIN message_receipts r ON r.message_id = m.id AND r.agent_id = :agent"
+        f" WHERE {_VISIBLE_TO} AND r.acknowledged_at IS NULL ORDER BY m.id LIMIT :limit",
+        {"project": project_id, "agent": agent_id, "limit": limit},
+    ).fetchall()
+    return [Message(**dict(r)) for r in rows]

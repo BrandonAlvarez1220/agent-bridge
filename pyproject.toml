@@ -10,6 +10,7 @@ dependencies = [
 ]
 
 [project.scripts]
+agentbridge = "agentbridge.cli:main"
 agentbridge-mcp = "agentbridge.server:main"
 
 [dependency-groups]

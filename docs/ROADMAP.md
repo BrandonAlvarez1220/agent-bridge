@@ -7,7 +7,7 @@
 | 3 | Dominio: validación de rutas e ids, modelos, auditoría, registro de proyectos y agentes | ✅ |
 | 4 | Servicios de tareas (claim, lease, dependencias), mensajería, reservas, decisiones y contexto | ✅ |
 | 5 | Servidor MCP (`mcp` 2.x, `MCPServer`), pruebas con cliente en memoria y con procesos stdio reales | ✅ |
-| 6 | Configuración verificada de Claude Code (`.mcp.json`) y OpenCode (`opencode.json`), hooks | ⏳ |
+| 6 | CLI, `setup` para Claude Code y OpenCode, hooks y plugin que bloquean ediciones sobre rutas reservadas | ✅ (falta la verificación manual con los clientes, ver CLIENT_SETUP.md) |
 | 7 | Comandos de worktrees e integración controlada | ⏳ |
 | 8 | End-to-end con dos procesos stdio, README completo, solución de problemas | ⏳ |
 
@@ -18,13 +18,13 @@
 - Claude Code: servidores stdio en `.mcp.json` (`mcpServers.<nombre>.command/args/env`) o con `claude mcp add --transport stdio --env K=V <nombre> -- <cmd>`.
 - OpenCode: `opencode.json` → `mcp.<nombre> = { "type": "local", "command": [...], "environment": {...}, "enabled": true }`.
 
-Las configuraciones se **probarán con los clientes reales en la etapa 6**. Hasta entonces se consideran no verificadas.
+Los formatos de configuración siguen la documentación oficial. La lógica de hooks y plugin está probada fuera de los clientes. La prueba con Claude Code y OpenCode abiertos queda como verificación manual: ver [`CLIENT_SETUP.md`](CLIENT_SETUP.md).
 
 ## Riesgos
 
 | Riesgo | Mitigación |
 | --- | --- |
-| Los agentes no revisan su bandeja ni sus reservas por iniciativa propia | Hooks de Claude Code y plugins/`AGENTS.md` de OpenCode (ADR-0009) |
+| Los agentes no revisan su bandeja ni sus reservas por iniciativa propia | Hooks de Claude Code y plugin + `instructions` de OpenCode (ADR-0009). En OpenCode la bandeja sigue dependiendo del modelo |
 | Un agente se cae con una tarea reclamada | *Lease* con vencimiento (ADR-0005) |
 | El LLM se equivoca de identidad | Identidad fijada por el proceso (ADR-0002) |
 | Demasiadas herramientas degradan la elección del modelo | Superficie mínima; unir operaciones afines |
