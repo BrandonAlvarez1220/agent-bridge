@@ -6,7 +6,7 @@
 | 2 | Estructura, esquema, migraciones, transacciones | ✅ |
 | 3 | Dominio: validación de rutas e ids, modelos, auditoría, registro de proyectos y agentes | ✅ |
 | 4 | Servicios de tareas (claim, lease, dependencias), mensajería, reservas, decisiones y contexto | ✅ |
-| 5 | Servidor MCP (`mcp` 2.x, `MCPServer`) y pruebas con cliente en memoria | ⏳ |
+| 5 | Servidor MCP (`mcp` 2.x, `MCPServer`), pruebas con cliente en memoria y con procesos stdio reales | ✅ |
 | 6 | Configuración verificada de Claude Code (`.mcp.json`) y OpenCode (`opencode.json`), hooks | ⏳ |
 | 7 | Comandos de worktrees e integración controlada | ⏳ |
 | 8 | End-to-end con dos procesos stdio, README completo, solución de problemas | ⏳ |
@@ -33,7 +33,7 @@ Las configuraciones se **probarán con los clientes reales en la etapa 6**. Hast
 
 ## Pruebas de aceptación (de la especificación)
 
-1. Ambos clientes se conectan al mismo estado → etapa 6/8.
+1. Ambos clientes se conectan al mismo estado → parcial: dos procesos stdio comparten estado con el cliente MCP oficial (`tests/integration/test_stdio_process.py`); falta verificar con Claude Code y OpenCode reales (etapa 6).
 2. Mensaje persiste entre reinicios → ✅ (`test_message_survives_recipient_restart`).
 3. `claim_task` concurrente → un ganador → ✅ (8 procesos, `tests/concurrency/test_service_races.py`).
 4. Reservas incompatibles rechazadas salvo excepción auditada → ✅ (unitarias y 8 procesos en carrera).

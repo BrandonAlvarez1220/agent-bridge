@@ -9,6 +9,9 @@ dependencies = [
     "pydantic>=2.7,<3",
 ]
 
+[project.scripts]
+agentbridge-mcp = "agentbridge.server:main"
+
 [dependency-groups]
 dev = [
     "pytest>=8",

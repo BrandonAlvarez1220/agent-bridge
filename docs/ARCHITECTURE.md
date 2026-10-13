@@ -39,7 +39,8 @@ src/agentbridge/
 ├── domain/           modelos Pydantic, ids y validación de rutas
 ├── services/         proyectos/agentes, tareas, mensajería,
 │                     reservas, decisiones, contexto y auditoría
-└── server.py         adaptador MCP delgado sobre los servicios   (etapa 5)
+├── config.py         identidad y rutas desde variables de entorno
+└── server.py         adaptador MCP delgado sobre los servicios
 ```
 
 **Por qué separar servicios del servidor MCP:** la lógica se prueba con llamadas Python directas, que son rápidas y deterministas. Si el SDK de MCP cambia (como pasó en la versión 2.0), solo se toca `server.py`.
@@ -58,3 +59,19 @@ El agente no declara quién es en cada llamada. El proceso se lanza con `AGENTBR
 6. Trabaja en su worktree; publica mensajes y decisiones cuando cambia un contrato.
 7. `report_completion` → pasa a `review` y libera reservas.
 8. Un humano revisa el diff, ejecuta los tests y hace el merge.
+
+## Concurrencia dentro de un proceso
+
+El SDK de MCP ejecuta las herramientas síncronas en hilos (`anyio.to_thread`). Si dos llamadas del mismo cliente llegan a la vez, compartirían la conexión SQLite y una podría abrir `BEGIN` dentro de la transacción de la otra. Por eso `server.py` envuelve cada herramienta en un `threading.Lock`.
+
+Así no se pierde concurrencia útil, porque la que importa ocurre **entre** procesos (un agente por proceso) y la resuelve SQLite. La prueba `test_concurrent_calls_on_one_server_do_not_interleave_transactions` lanza 30 llamadas simultáneas. Sin el lock falla.
+
+## Errores
+
+Cada error de dominio llega al modelo como `isError: true` con un JSON estable:
+
+```json
+{"error": "conflict", "message": "la tarea ya está reclamada", "details": {"assignee_id": "claude"}}
+```
+
+Códigos: `invalid_input`, `not_found`, `conflict`, `permission_denied`, `busy`. Un error inesperado no expone detalles internos: el SDK solo devuelve `Error executing tool <nombre>` y registra la traza en stderr.
