@@ -7,7 +7,9 @@ ni comandos extra.
 
 from __future__ import annotations
 
+import os
 import subprocess
+from collections.abc import Mapping
 from pathlib import Path
 
 from agentbridge.errors import InvalidInputError
@@ -15,7 +17,9 @@ from agentbridge.errors import InvalidInputError
 GIT_TIMEOUT_SECONDS = 30
 
 
-def git(cwd: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
+def git(
+    cwd: Path, *args: str, check: bool = True, env: Mapping[str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
     try:
         result = subprocess.run(
             ["git", "-C", str(cwd), *args],
@@ -23,6 +27,7 @@ def git(cwd: Path, *args: str, check: bool = True) -> subprocess.CompletedProces
             text=True,
             timeout=GIT_TIMEOUT_SECONDS,
             check=False,
+            env={**os.environ, **env} if env else None,
         )
     except FileNotFoundError as exc:
         raise InvalidInputError("git no está instalado o no está en el PATH") from exc

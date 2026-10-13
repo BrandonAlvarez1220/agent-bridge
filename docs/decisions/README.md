@@ -14,3 +14,4 @@ Cada ADR registra una decisión, el contexto que la motivó y sus consecuencias.
 | [0008](0008-ready-derivado.md) | `ready` se calcula, no se almacena |
 | [0009](0009-hooks-para-cumplimiento.md) | Hooks del cliente para que el protocolo se cumpla de verdad |
 | [0010](0010-sdk-mcp-2x.md) | SDK oficial `mcp` 2.x |
+| [0011](0011-integracion-controlada.md) | Integración controlada: fusión en memoria y pruebas sobre el resultado fusionado |

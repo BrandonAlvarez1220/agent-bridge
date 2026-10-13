@@ -4,7 +4,7 @@ Infraestructura local para que varios agentes de programación —inicialmente *
 
 AgentBridge no une los modelos ni comparte sus conversaciones. Les da un **estado compartido y verificable**: tareas, mensajes, decisiones, dependencias, reservas temporales de rutas y una bitácora de auditoría. Todo vive en una base SQLite y se expone mediante un servidor MCP.
 
-> **Estado:** en desarrollo (etapa 6 de 8). Hay servidor MCP, CLI y configuración automática para Claude Code y OpenCode, con hooks que bloquean ediciones sobre rutas reservadas por otro agente. Falta la verificación manual con ambos clientes abiertos ([`docs/CLIENT_SETUP.md`](docs/CLIENT_SETUP.md)). Ver [`docs/ROADMAP.md`](docs/ROADMAP.md).
+> **Estado:** en desarrollo (etapa 7 de 8). Hay servidor MCP, CLI, configuración automática para Claude Code y OpenCode con hooks que bloquean ediciones sobre rutas reservadas por otro agente, worktrees por agente o tarea, e integración controlada. Falta la verificación manual con ambos clientes abiertos ([`docs/CLIENT_SETUP.md`](docs/CLIENT_SETUP.md)). Ver [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Qué garantiza y qué no
 
@@ -44,9 +44,15 @@ Lo normal es no lanzarlo a mano: `agentbridge setup claude|opencode` genera la c
 ```bash
 uv tool install .
 agentbridge init  --project-id demo --repo /ruta/al/repo
-agentbridge setup claude   --worktree ../demo-claude   --project-id demo --agent-id claude
-agentbridge setup opencode --worktree ../demo-opencode --project-id demo --agent-id opencode
+agentbridge worktree create --project-id demo --agent-id claude      # ../repo-claude
+agentbridge worktree create --project-id demo --agent-id opencode    # ../repo-opencode
+agentbridge setup claude   --worktree ../repo-claude   --project-id demo --agent-id claude
+agentbridge setup opencode --worktree ../repo-opencode --project-id demo --agent-id opencode
 agentbridge status --project-id demo
+
+# Integración: revisar (no modifica nada) y, si todo está bien, fusionar
+agentbridge integrate check --project-id demo --branch claude/work --test-cmd "uv run pytest -q"
+agentbridge integrate merge --project-id demo --branch claude/work --test-cmd "uv run pytest -q" --yes
 ```
 
 ### Herramientas
@@ -67,4 +73,5 @@ Son 18, igual que en la especificación, pero no las mismas. Se quitaron `regist
 - [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md): tablas, estados e invariantes.
 - [`docs/decisions/`](docs/decisions/): decisiones de arquitectura (ADR) y el *por qué* de cada una.
 - [`docs/CLIENT_SETUP.md`](docs/CLIENT_SETUP.md): instalación, configuración de clientes y verificación manual.
+- [`docs/WORKTREES.md`](docs/WORKTREES.md): worktrees, integración controlada y recuperación.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md): etapas, riesgos y pruebas de aceptación.

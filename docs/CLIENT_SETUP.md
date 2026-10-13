@@ -18,9 +18,11 @@ agentbridge --help
 cd /ruta/mi-proyecto
 agentbridge init --project-id mi-proyecto --repo .
 
-git worktree add ../mi-proyecto-claude   -b claude/trabajo
-git worktree add ../mi-proyecto-opencode -b opencode/trabajo
+agentbridge worktree create --project-id mi-proyecto --agent-id claude     # ../mi-proyecto-claude, rama claude/work
+agentbridge worktree create --project-id mi-proyecto --agent-id opencode   # ../mi-proyecto-opencode
 ```
+
+`worktree create` crea la carpeta y la rama y registra el worktree del agente en AgentBridge. También puedes usar `git worktree add` directamente. Ver [`WORKTREES.md`](WORKTREES.md).
 
 La base por defecto es `~/.agentbridge/agentbridge.db`. Todos los agentes deben usar la misma (`--db` o `AGENTBRIDGE_DB`).
 

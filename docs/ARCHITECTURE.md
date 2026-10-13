@@ -40,7 +40,13 @@ src/agentbridge/
 ├── services/         proyectos/agentes, tareas, mensajería,
 │                     reservas, decisiones, contexto y auditoría
 ├── config.py         identidad y rutas desde variables de entorno
-└── server.py         adaptador MCP delgado sobre los servicios
+├── server.py         adaptador MCP delgado sobre los servicios
+├── cli.py            comando `agentbridge` (init, setup, hooks, worktree, integrate…)
+├── hooks.py          lógica de los hooks de Claude Code y del plugin de OpenCode
+├── clients.py        genera la configuración de cada cliente en su worktree
+├── worktrees.py      worktrees y ramas por agente o tarea
+├── integration.py    revisión y fusión controlada
+└── gitutil.py        llamadas a Git sin shell
 ```
 
 **Por qué separar servicios del servidor MCP:** la lógica se prueba con llamadas Python directas, que son rápidas y deterministas. Si el SDK de MCP cambia (como pasó en la versión 2.0), solo se toca `server.py`.

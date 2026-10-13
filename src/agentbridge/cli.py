@@ -13,10 +13,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shlex
 import sys
 from pathlib import Path
 
-from agentbridge import clients, gitutil, hooks
+from agentbridge import clients, gitutil, hooks, integration, worktrees
 from agentbridge.clock import system_clock
 from agentbridge.config import DEFAULT_DB, ENV_AGENT, ENV_DB, ENV_PROJECT, ENV_WORKSPACE
 from agentbridge.errors import AgentBridgeError
@@ -96,6 +97,32 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--full", action="store_true", help="contexto completo (inicio de sesión)")
     p.add_argument("--workspace", type=Path)
     _identity_args(p)
+    p = sub.add_parser("worktree", help="worktrees por agente o tarea")
+    wsub = p.add_subparsers(dest="action", required=True)
+    w = wsub.add_parser("create", help="crea carpeta y rama nuevas para un agente")
+    w.add_argument("--task-id", type=int)
+    w.add_argument("--base", help="rama base (por defecto, la del proyecto)")
+    w.add_argument("--path", type=Path)
+    w.add_argument("--branch")
+    _identity_args(w)
+    w = wsub.add_parser("list", help="worktrees con su agente, estado y diferencia con la base")
+    w.add_argument("--project-id", default=os.environ.get(ENV_PROJECT), required=not os.environ.get(ENV_PROJECT))
+    _db_arg(w)
+
+    p = sub.add_parser("integrate", help="integración controlada; nunca fusiona sin 'merge --yes'")
+    isub = p.add_subparsers(dest="action", required=True)
+    for name, text in (("check", "revisa sin modificar nada"), ("merge", "revisa y, si todo está bien, fusiona")):
+        i = isub.add_parser(name, help=text)
+        i.add_argument("--project-id", default=os.environ.get(ENV_PROJECT), required=not os.environ.get(ENV_PROJECT))
+        i.add_argument("--branch", required=True)
+        i.add_argument("--base")
+        i.add_argument("--test-cmd", required=name == "merge", help="p. ej. 'uv run pytest -q' (sin shell)")
+        i.add_argument("--timeout", type=int, default=integration.DEFAULT_TEST_TIMEOUT)
+        i.add_argument("--json", action="store_true")
+        _db_arg(i)
+        if name == "merge":
+            i.add_argument("--yes", action="store_true", help="confirmación explícita (obligatoria)")
+            i.add_argument("--keep-tasks", action="store_true", help="no marcar como done las tareas en review")
     return parser
 
 
@@ -209,6 +236,66 @@ def cmd_hook(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_worktree(args: argparse.Namespace) -> int:
+    conn = _open(args.db)
+    if args.action == "create":
+        created = worktrees.create_worktree(
+            conn,
+            system_clock,
+            project_id=args.project_id,
+            agent_id=args.agent_id,
+            task_id=args.task_id,
+            base=args.base,
+            path=args.path,
+            branch=args.branch,
+        )
+        print(f"worktree: {created.path}\nrama:     {created.branch} (desde {created.base})")
+        print(f"siguiente: agentbridge setup <claude|opencode> --worktree {created.path} ...")
+        return 0
+    for wt in worktrees.list_worktrees(conn, project_id=args.project_id):
+        diff = f" +{wt.ahead}/-{wt.behind}" if wt.ahead is not None else ""
+        dirty = " (cambios sin commit)" if wt.dirty else ""
+        print(f"{wt.agent_id or '-':<12} {wt.branch or '(detached)':<36}{diff}{dirty}  {wt.path}")
+    return 0
+
+
+def _print_report(report: integration.IntegrationReport, as_json: bool) -> None:
+    if as_json:
+        print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+        return
+    print(f"Rama {report.branch} → {report.base}: {report.verdict}")
+    print(f"  commits: {report.commits_ahead}  {report.shortstat}")
+    if report.agent_id:
+        print(f"  agente: {report.agent_id}  tareas en review: {report.review_tasks or 'ninguna'}")
+    for f in report.conflicts:
+        print(f"  CONFLICTO: {f}")
+    if report.tests_passed is not None:
+        print(f"  pruebas ({shlex.join(report.test_command or [])}): {'OK' if report.tests_passed else 'FALLARON'}")
+        if not report.tests_passed:
+            print("  --- salida (final) ---\n" + report.test_output_tail)
+    for w in report.warnings:
+        print(f"  aviso: {w}")
+
+
+def cmd_integrate(args: argparse.Namespace) -> int:
+    conn = _open(args.db)
+    common = {"project_id": args.project_id, "branch": args.branch, "base": args.base, "timeout": args.timeout}
+    if args.action == "check":
+        report = integration.check_integration(conn, system_clock, test_command=args.test_cmd, **common)
+        _print_report(report, args.json)
+        return 0 if report.verdict in ("ready", "ready_without_tests") else EXIT_CONFLICT
+    if not args.yes:
+        print("agentbridge: 'integrate merge' requiere --yes. Ejecuta antes 'integrate check'.", file=sys.stderr)
+        return EXIT_ERROR
+    report = integration.merge_branch(
+        conn, system_clock, test_command=args.test_cmd, approve_tasks=not args.keep_tasks, **common
+    )
+    _print_report(report, args.json)
+    if not args.json:
+        print(f"Fusionada en {report.base}. Revisa el resultado y publícalo tú (git push): AgentBridge no hace push.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "serve":
@@ -222,6 +309,8 @@ def main(argv: list[str] | None = None) -> int:
         "status": cmd_status,
         "check-paths": cmd_check_paths,
         "hook": cmd_hook,
+        "worktree": cmd_worktree,
+        "integrate": cmd_integrate,
     }
     try:
         return handlers[args.command](args)

@@ -8,7 +8,7 @@
 | 4 | Servicios de tareas (claim, lease, dependencias), mensajería, reservas, decisiones y contexto | ✅ |
 | 5 | Servidor MCP (`mcp` 2.x, `MCPServer`), pruebas con cliente en memoria y con procesos stdio reales | ✅ |
 | 6 | CLI, `setup` para Claude Code y OpenCode, hooks y plugin que bloquean ediciones sobre rutas reservadas | ✅ (falta la verificación manual con los clientes, ver CLIENT_SETUP.md) |
-| 7 | Comandos de worktrees e integración controlada | ⏳ |
+| 7 | Worktrees por agente/tarea e integración controlada (`merge-tree`, pruebas sobre el resultado fusionado) | ✅ |
 | 8 | End-to-end con dos procesos stdio, README completo, solución de problemas | ⏳ |
 
 ## Entorno verificado (2026-10-13)
@@ -41,7 +41,7 @@ Los formatos de configuración siguen la documentación oficial. La lógica de h
 6. No liberar reservas ajenas → ✅
 7. Dependencias bloquean (y no se permiten ciclos) → ✅
 8. Rutas fuera del repo rechazadas → ✅ (`tests/unit/test_paths.py`, incluye escape por enlace simbólico).
-9. Worktrees separan cambios → etapa 7.
-10. Conflictos Git detectados al integrar → etapa 7.
+9. Worktrees separan cambios → ✅ (`tests/integration/test_worktrees_and_integration.py`).
+10. Conflictos Git detectados al integrar → ✅ (`integrate check` sin modificar ramas; nunca se afirma que el MCP los evite).
 11. Pruebas con un comando (`uv run pytest`) → ✅
 12. README completo → etapa 8.
