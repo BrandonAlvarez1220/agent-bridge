@@ -1,0 +1,34 @@
+[project]
+name = "agentbridge"
+version = "0.1.0"
+description = "Coordinación local multiagente (Claude Code, OpenCode) vía MCP con estado compartido en SQLite."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "mcp>=2.2,<3",
+    "pydantic>=2.7,<3",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentbridge"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
